@@ -1,0 +1,258 @@
+{
+	"info": {
+		"_postman_id": "cbbaf87c-7e06-411a-8ff1-ec8df2b32dfc",
+		"name": "HomeWorkAutomatedTests",
+		"description": "This collection tests and validates the OpenWeatherMap API Get requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14850672"
+	},
+	"item": [
+		{
+			"name": "SimpleGetRequests",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Verify successful response\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Validate city specific data\", function() {",
+							"    const lon = pm.response.json().coord.lon;",
+							"    const lat = pm.response.json().coord.lat;",
+							"    const countryCode = pm.response.json().sys.country;",
+							"    pm.expect(lon).to.equal(25.2798);",
+							"    pm.expect(lat).to.equal(54.6892);",
+							"    pm.expect(countryCode).to.equal(\"LT\");",
+							"    pm.expect(pm.response.json().name).to.equal(\"Vilnius\");",
+							"    pm.expect(pm.response.json().timezone).to.equal(10800);",
+							"    pm.expect(pm.response.json().id).to.equal(593116);",
+							"});",
+							"",
+							"pm.test(\"Validate weather condition\", function() {",
+							"    var weatherConditions = {",
+							"    \"Thunderstorm\": [200, 201, 202, 210, 211, 212, 221, 230, 231, 232],",
+							"    \"Drizzle\": [300, 301, 302, 310, 311, 312, 313, 314, 321],",
+							"    \"Rain\": [500, 501, 502, 503, 504, 511, 520, 521, 522, 531],",
+							"    \"Snow\": [600, 601, 602, 611, 612, 613, 615, 616, 620, 621, 622],",
+							"    \"Mist\": [701],",
+							"    \"Smoke\": [711],",
+							"    \"Haze\": [721],",
+							"    \"Dust\": [731, 761],",
+							"    \"Fog\": [741],",
+							"    \"Sand\": [751],",
+							"    \"Ash\": [762],",
+							"    \"Squall\": [771],",
+							"    \"Tornado\": [781],",
+							"    \"Clear\": [800],",
+							"    \"Clouds\": [801, 802, 803, 804]};",
+							"",
+							"    const weatherId = pm.response.json().weather[0].id;",
+							"    const weatherKeyword = pm.response.json().weather[0].main;",
+							"",
+							"    pm.expect(weatherConditions).to.have.property(weatherKeyword);    ",
+							"    pm.expect(weatherConditions[weatherKeyword]).to.include(weatherId);",
+							"",
+							"    const description = pm.response.json().weather[0].description;",
+							"",
+							"    if(weatherKeyword.toLowerCase() === \"snow\"){",
+							"        pm.expect(description.includes(weatherKeyword.toLowerCase() || description.includes(\"sleet\")));",
+							"    } else {",
+							"        pm.expect(description.includes(weatherKeyword.toLowerCase()));",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Validate coordinate data\", function() {",
+							"    const coord = pm.response.json().coord;",
+							"    pm.expect(pm.response.json().coord.lon).to.be.a(\"number\").and.satisfy(lon => lon.toString().length >= 7);",
+							"    pm.expect(pm.response.json().coord.lat).to.be.a(\"number\").and.satisfy(lat => lat.toString().length >= 7);",
+							"});",
+							"",
+							"pm.test(\"Validate response time\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(200);",
+							"});",
+							"",
+							"pm.test(\"Negative test scenario - Invalid API key\", function() {",
+							"    const apiKey = pm.environment.get(\"apiKey\" + \"1\");",
+							"    const url = `https://api.openweathermap.org/data/2.5/weather?q=Vilnius,lt&appid=${apiKey}`;",
+							"",
+							"    pm.sendRequest({",
+							"        url: url,",
+							"        method: \"GET\"",
+							"    }, function (err, response) {",
+							"        pm.expect(response.code).to.equal(401);",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"Country code is a valid 2-letter code\", function () {",
+							"    const countryCodePattern = /^[A-Za-z]{2}$/;",
+							"    pm.expect(pm.response.json().sys.country).to.match(countryCodePattern, \"Invalid country code\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.openweathermap.org/data/2.5/weather?q=Vilnius,lt&appid={{appid}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"openweathermap",
+						"org"
+					],
+					"path": [
+						"data",
+						"2.5",
+						"weather"
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "Vilnius,lt"
+						},
+						{
+							"key": "appid",
+							"value": "{{appid}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "InvalidCityNameRequest",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Invalid city name\", function() {",
+							"    pm.expect(pm.response.json().cod).to.equal('404');",
+							"    pm.expect(pm.response.json().message).to.equal(\"city not found\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.openweathermap.org/data/2.5/weather?q=Vilniuss,lt&appid={{appid}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"openweathermap",
+						"org"
+					],
+					"path": [
+						"data",
+						"2.5",
+						"weather"
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "Vilniuss,lt"
+						},
+						{
+							"key": "appid",
+							"value": "{{appid}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "InvalidAPIRequest",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.variables.set(\"appid\", \"36043bef5597dc4286287afa1eb30e33\");",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Invalid API key\", function () {",
+							"  pm.expect(pm.response.json().cod).to.equal(401);",
+							"  pm.expect(pm.response.json().message).to.equal(\"Invalid API key. Please see https://openweathermap.org/faq#error401 for more info.\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.openweathermap.org/data/2.5/weather?q=Vilnius,lt&appid={{appid}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"openweathermap",
+						"org"
+					],
+					"path": [
+						"data",
+						"2.5",
+						"weather"
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "Vilnius,lt"
+						},
+						{
+							"key": "appid",
+							"value": "{{appid}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
